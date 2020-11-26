@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec 10 16:20:45 2019
+
+@author: nicovonau
+"""
+import numpy as np
+import pandas as pd
+import glob
+import time
+from sklearn.feature_selection import RFE
+
+t= time.time()
+#Importing the dataset
+path = 'tempData/features_*.txt' # use your path
+all_files = glob.glob(path)
+
+li = []
+headers= ['pressure sensor 1']
+for filename in all_files:
+    li.append(pd.read_csv(filename, header= None))
+
+dataset = pd.concat(li, axis= 0, ignore_index=True, join='inner')
+
+#folder="tempData/"
+#dataset = pd.read_csv(folder+"features_18.txt", header=headers)
+X = dataset.iloc[:, 0:20].values
+y = dataset.iloc[:, 23].values
+
+# Splitting the dataset into the Training set and Test set
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25)
+
+# Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+# Importing the Keras libraries and packages
+import keras
+from keras.models import Sequential
+from keras.layers import Dense
+
+# Initialising the ANN
+classifier = Sequential()
+
+# Adding the input layer and the first hidden layer
+classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu', input_dim = 11))
+
+# Adding the second hidden layer
+classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+
+# Adding the output layer
+classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+
+# Compiling the ANN
+classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+
+# Fitting the ANN to the Training set
+classifier.fit(X_train, y_train, batch_size = 10, epochs = 100)
+
+# Part 3 - Making the predictions and evaluating the model
+
+# Predicting the Test set results
+y_pred = classifier.predict(X_test)
+y_pred = (y_pred > 0.5)
